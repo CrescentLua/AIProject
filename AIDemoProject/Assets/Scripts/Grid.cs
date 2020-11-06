@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Grid : MonoBehaviour
 {
+    public Transform AI;
+
     public LayerMask blockadeMask; 
     public float radiusNode; //Radius of the node
     public Vector2 worldSizeGrid; //The grid's world size 
@@ -17,25 +19,24 @@ public class Grid : MonoBehaviour
 
     void Start()
     {
-        worldSizeGrid.x = 300.0f; //Creating a 30x30 sized grid 
+        worldSizeGrid.x = 30.0f; //Creating a 30x30 sized grid 
         worldSizeGrid.y = 30.0f;
         radiusNode = 0.5f; //With a node radius of 0.5; Can make this smaller or bigger, but the collision on the layerMask will vary!  
 
         diameterNode = radiusNode * 2; //Retrieve the diameter of the node 
         SetGridSize(); 
-        BuildGrid(); 
     }
-
-    /*void Update()
-    {
-        BuildGrid();     
-    } */
 
     void SetGridSize()
     {
         gridSize.x = Mathf.RoundToInt(worldSizeGrid.x / diameterNode);
         gridSize.y = Mathf.RoundToInt(worldSizeGrid.y / diameterNode);
     }
+
+    void Update()
+    {
+        BuildGrid();     
+    } 
 
     void BuildGrid()
     {
@@ -64,12 +65,29 @@ public class Grid : MonoBehaviour
         }
     }
 
+    public Node GetNodeFromWorldPosition(Vector3 AIPos_)
+    {
+        Vector2 percentage; 
+        percentage.x = (AIPos_.x + worldSizeGrid.x / 2.0f) / worldSizeGrid.x;
+        percentage.y = (AIPos_.z + worldSizeGrid.y / 2.0f) / worldSizeGrid.y;
+
+        percentage.x = Mathf.Clamp01(percentage.x);
+        percentage.y = Mathf.Clamp01(percentage.y);
+
+        Vector2 gridInfo;
+        gridInfo.x = Mathf.RoundToInt((gridSize.x - 1) * percentage.x);
+        gridInfo.y = Mathf.RoundToInt((gridSize.y - 1) * percentage.y);
+
+        return grid[(int)gridInfo.x, (int)gridInfo.y];
+    }
+
     void OnDrawGizmos()
     {
         Gizmos.DrawWireCube(transform.position, new Vector3(worldSizeGrid.x , 1.0f, worldSizeGrid.y));
 
         if (grid != null)
         {
+            Node AINode = GetNodeFromWorldPosition(AI.position); 
             foreach (Node node in grid)
             {
                 if (node.canWalk)
@@ -80,6 +98,11 @@ public class Grid : MonoBehaviour
                 else
                 {
                     Gizmos.color = new Color(1, 0, 0, 1); //Otherwise if the node cannot be walked on, set the colour to red.
+                }
+
+                if (AINode == node)
+                {
+                    Gizmos.color = new Color(0, 0, 1, 1); //Otherwise if the node cannot be walked on, set the colour to red.
                 }
 
 

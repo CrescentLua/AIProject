@@ -620,6 +620,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c9a706f142266746a20538bf41d3adb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  AI: {fileID: 575754012}
   blockadeMask:
     serializedVersion: 2
     m_Bits: 256
