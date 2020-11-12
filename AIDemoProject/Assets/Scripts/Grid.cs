@@ -4,18 +4,16 @@ using UnityEngine;
 
 public class Grid : MonoBehaviour
 {
-    public Transform AI;
-
     public LayerMask blockadeMask; 
     public float radiusNode; //Radius of the node
     public Vector2 worldSizeGrid; //The grid's world size 
 
-    Node[,] grid;
+    Node[,] grid; //Create a grid of nodes consisting of a 2D array 
 
     Vector2 gridSize;
     float diameterNode; //Diameter of the node 
 
-    Vector3 bottomLeftWorld; //The world's bottom left   
+    Vector3 bottomLeftWorld; //The bottom left of the world   
 
     void Start()
     {
@@ -24,23 +22,24 @@ public class Grid : MonoBehaviour
         radiusNode = 0.5f; //With a node radius of 0.5; Can make this smaller or bigger, but the collision on the layerMask will vary!  
 
         diameterNode = radiusNode * 2; //Retrieve the diameter of the node 
-        SetGridSize(); 
+        SetGridSize();
+        BuildGrid();
     }
 
     void SetGridSize()
     {
-        gridSize.x = Mathf.RoundToInt(worldSizeGrid.x / diameterNode);
-        gridSize.y = Mathf.RoundToInt(worldSizeGrid.y / diameterNode);
+        gridSize.x = Mathf.RoundToInt(worldSizeGrid.x / diameterNode); //This will determine how many nodes can fit within the X, and Y coordinates
+        gridSize.y = Mathf.RoundToInt(worldSizeGrid.y / diameterNode); //Using RoundToInt method to make sure the variable is an int 
     }
 
     void Update()
-    {
-        BuildGrid();     
+    {   
+
     } 
 
     void BuildGrid()
     {
-        grid = new Node[(int)gridSize.x, (int)gridSize.y];
+        grid = new Node[(int)gridSize.x, (int)gridSize.y]; 
         bottomLeftWorld = (transform.position - Vector3.right) * (worldSizeGrid.x / 2.0f) - (Vector3.forward * worldSizeGrid.y) / 2.0f;
 
         for (int gridX = 0; gridX < gridSize.x; gridX++)
@@ -60,9 +59,39 @@ public class Grid : MonoBehaviour
                     canWalk = true; 
                 }
 
-                grid[gridX, gridY] = new Node(canWalk, pointInWorld); 
+                grid[gridX, gridY] = new Node(canWalk, pointInWorld, new Vector2(gridX, gridY)); 
             }
         }
+    }
+
+    public List<Node> GetNeighbouringNodes(Node node_)
+    {
+        List<Node> neighbouringNodes = new List<Node>(); 
+
+        //For loop that searches in a 3x3 block surrounding the node 
+        for (int x = -1; x <= 1; x++)
+        {
+            for(int y = -1; y <= 1; y++)
+            {
+                if (x == 0 && y == 0)
+                {
+                    continue;
+                }
+
+                Vector2 check;
+
+                check.x = (int)node_.gridPosition.x + x;
+                check.y = (int)node_.gridPosition.y + y; 
+
+                //Check if these variables are within the grid 
+                if (check.x >= 0 && check.x < gridSize.x && check.y >= 0 && check.y < gridSize.y)
+                {
+                    neighbouringNodes.Add(grid[(int)check.x, (int)check.y]);
+                }
+            }
+        }
+
+        return neighbouringNodes;
     }
 
     public Node GetNodeFromWorldPosition(Vector3 AIPos_)
@@ -81,13 +110,13 @@ public class Grid : MonoBehaviour
         return grid[(int)gridInfo.x, (int)gridInfo.y];
     }
 
+    public List<Node> path;
     void OnDrawGizmos()
     {
         Gizmos.DrawWireCube(transform.position, new Vector3(worldSizeGrid.x , 1.0f, worldSizeGrid.y));
 
         if (grid != null)
         {
-            Node AINode = GetNodeFromWorldPosition(AI.position); 
             foreach (Node node in grid)
             {
                 if (node.canWalk)
@@ -100,11 +129,13 @@ public class Grid : MonoBehaviour
                     Gizmos.color = new Color(1, 0, 0, 1); //Otherwise if the node cannot be walked on, set the colour to red.
                 }
 
-                if (AINode == node)
+                if (path != null)
                 {
-                    Gizmos.color = new Color(0, 0, 1, 1); //Otherwise if the node cannot be walked on, set the colour to red.
-                }
-
+                    if(path.Contains(node))
+                    {
+                        Gizmos.color = new Color(0, 0, 1, 1);
+                    }
+                } 
 
                 float gridSeparation = 0.1f; //This just helps separate each node on the grid when they are drawn so they don't look glued together
                 Gizmos.DrawCube(node.worldPosition, new Vector3(1.0f, 1.0f, 1.0f) * (diameterNode - gridSeparation));
